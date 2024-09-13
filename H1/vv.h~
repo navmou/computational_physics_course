@@ -1,0 +1,11 @@
+/*
+
+  Created by Navid
+
+*/
+
+extern void write_to_file(char *fname,  double *kinE , double *potE , double *totE , int n_timesteps);
+
+extern void velocity_verlet(int n_timesteps, int n_particles, double v[][3], double pos[][3],double dt, double m , double L , double *potE , double *kinE , double *totE , double *Pressure);
+
+

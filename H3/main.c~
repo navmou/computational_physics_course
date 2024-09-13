@@ -1,0 +1,177 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
+#include <math.h>
+#include <sys/time.h>
+
+struct timeval tv;
+
+void displace(double *walkers , double * weights ,  double E_T , int N , gsl_rng *q , double sqrt_delta_t , double delta_t)
+{
+  for (int i = 0 ; i < N; ++i) {
+    walkers[i] += sqrt_delta_t * gsl_ran_gaussian(q,1);
+    weights[i] = exp(-delta_t*(0.5*walkers[i]*walkers[i] - E_T));   
+  }
+}
+
+
+
+void annihilate(double *walkers , double *weights , int N0 , int *N , gsl_rng *q)
+{
+  int annihilate_num = 0;
+  int create_num = 0;
+  int m = 0;
+  int *what_to_do = malloc(sizeof(double) * N0);
+
+  for (int i = 0 ; i < N0; ++i) {
+    m = (int) (weights[i]+gsl_rng_uniform(q));
+    what_to_do[i] = m;
+  }
+
+  int new_N = 0;
+  for (int i = 0; i < N0; ++i) {
+    new_N += what_to_do[i];
+  }
+
+  double *new_walkers = malloc(sizeof(double) * new_N);
+
+  int new_i = 0;
+  for (int i = 0; i < N0; ++i) {
+    for (int j = 0; j < what_to_do[i]; ++j)
+      {
+	new_walkers[new_i] = walkers[i];
+	new_i++;
+      }    
+  }
+  
+  walkers = realloc(walkers , new_N * sizeof(double));
+  for (int i = 0; i < new_N; ++i) {
+    walkers[i] = new_walkers[i];
+  }
+
+  *N = new_N;
+
+  free(new_walkers); new_walkers = NULL;
+  free(what_to_do); what_to_do = NULL;
+}
+
+
+
+
+
+
+int main ()
+{
+  gettimeofday(&tv, NULL);	
+  // Initial values
+  int N0 = 10 , N = N0 , new_N = N0;
+  int iter = 1000;
+  double E_T = 0.20;
+  double *walkers = malloc(sizeof(double) * N);
+  double *weights = malloc(sizeof(double) * N);
+  int *N_list = malloc(sizeof(int) * iter);
+  double delta_t = 0.2 , sqrt_delta_t = sqrt(delta_t);
+  int *what_to_do = malloc(sizeof(double) * N0);
+  double *new_walkers = malloc(sizeof(double) * new_N);
+  double *E_Ts = malloc(sizeof(double) * iter);
+
+  int m , new_i;  
+  const gsl_rng_type *T;
+  gsl_rng *q;
+  gsl_rng_env_setup();
+  T = gsl_rng_default;
+  q = gsl_rng_alloc(T);
+  gsl_rng_set(q, tv.tv_usec);
+
+  for (int i = 0 ; i < N; ++i) {
+    walkers[i] = 0.0;
+  }
+
+  int lenght_counter = 0;
+  N_list[0] = N0;
+  E_Ts[0] = E_T;
+  for (int t = 1; t < iter; ++t)
+    {
+      printf("displace !\n");
+      //displace and calculate the weight
+      for (int i = 0 ; i < N; ++i) {
+	walkers[i] += sqrt_delta_t * gsl_ran_gaussian(q,1);
+	weights[i] = exp(-1.0*delta_t*(0.5*walkers[i]*walkers[i] - E_T));
+	printf("%f\n",weights[i] );
+      }
+      
+
+      printf("what to do for i = 0 ; N = %d\n", N);
+      //check what should be done with each walker based on the weight function
+      for (int i = 0 ; i < N; ++i) {
+	m = (int) (weights[i]+gsl_rng_uniform(q));
+	printf("%d-%d\n",i,m);
+	what_to_do[i] = m;
+      }
+      
+      printf("new N check \n");
+      //check the number of new walkers
+      new_N = 0;
+      for (int i = 0; i < N; ++i) {
+	new_N += what_to_do[i];
+      }
+      
+      
+      printf("reallocation of new walkers\n");
+      //reallocation of the new walkers array.
+      new_walkers = realloc(new_walkers , new_N * sizeof(double));
+      weights = realloc(weights , new_N*sizeof(double));
+      for (int i = 0; i < new_N; ++i) {
+	//	printf("%f\n",new_walkers[i] );
+      }
+      
+      printf("making the new walkers array\n");      
+      new_i = 0;
+      for (int i = 0; i < N; ++i) {
+	for (int j = 0; j < what_to_do[i] ; ++j)
+	  {
+	    new_walkers[new_i] = walkers[i];
+	    new_i++;
+	  }    
+      }
+
+      printf("reallocation of walkers\n");
+      walkers = realloc(walkers , new_N * sizeof(double));
+      printf("updating walkers\n");
+      for (int i = 0; i < new_N; ++i) {
+	walkers[i] = new_walkers[i];
+      }
+
+      printf("Updating N\n");
+      N = new_N;
+      printf("%d - %d\n", new_N , t);
+      for (int i = 0; i < N; ++i) {
+	weights[i] = 0.0;
+      }
+
+      //updating E_T
+      double E_T_avg = 0.0;
+      
+
+
+      
+      N_list[t] = new_N;
+      printf("done!\n");
+    }
+
+
+  for (int i = 0 ; i < iter; ++i) {
+    printf("%d\n",N_list[i] );
+  }
+
+  free(walkers)	; walkers = NULL;
+  free(new_walkers); new_walkers = NULL;
+  free(what_to_do); what_to_do = NULL;
+  free(weights); weights = NULL;
+  free(N_list); N_list = NULL;
+  gsl_rng_free(q);
+	
+  return 0;
+}

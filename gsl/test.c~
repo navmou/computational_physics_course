@@ -1,0 +1,15 @@
+#include <stdio.h>
+#include <gsl/gsl_rng.h>
+#include <time.h>
+#include "func.h"
+
+int main(){
+
+  int size = 100000;
+  double *x = malloc(sizeof(double) * size);
+  gaussian_generator(size , x);
+  char file_name[] = "random.txt";
+  write_file(file_name , x , size);
+  free(x) ; x = NULL;
+  return 0;
+}

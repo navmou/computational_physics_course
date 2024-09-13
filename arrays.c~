@@ -1,0 +1,43 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+void print_array(double arr[] , int len);
+void write_array(char *file_name , double arr[] , int len);
+
+int main(){
+
+  srand(20);
+  int size = 10;
+  double A[size];
+
+  for(int i = 0 ; i < size ; ++i){
+    A[i] = (double)rand()/(double)RAND_MAX;
+  }
+  
+  print_array(A , size);
+  char file_name[] = "array.txt";
+  write_array(file_name , A , size);
+
+  return 0;
+}
+
+void print_array(double arr[] , int len){
+  for(int i = 0 ; i < len ; ++i){
+    printf("%f\n",arr[i] );
+  }
+}
+
+void write_array(char *file_name , double arr[] , int len){
+  FILE *outputfile;
+  outputfile = fopen(file_name , "w");
+  for(int i = 0 ; i < len ; ++i){
+    fprintf(outputfile, "%f\n", arr[i]);
+  }
+  fclose(outputfile);
+}
+
+void matrix_multiply(double A[3][3] , double B[3][3] , double C[3][3]){
+
+
+}
+
